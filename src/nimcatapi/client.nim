@@ -6,9 +6,8 @@ using
     url: string
     request: Request
 
-var
-    failedImageParseUrl*: string = ""
-    client: AsyncHttpClient = newAsyncHttpClient()
+var client: AsyncHttpClient = newAsyncHttpClient()
+
 
 
 # -----------------------------------------------------------------------------
@@ -42,23 +41,20 @@ proc newDogApiClient*(token: string = ""): AnimalApi =
     getNewClient(TheDogApi, token)
 
 
-proc setFailedImageParseImage*(url) =
-    ## Changes the image that shows up, when a request error happens.
-    failedImageParseUrl = url
-
-
 
 # -----------------------------------------------------------------------------
 # URL stuff:
 # -----------------------------------------------------------------------------
 
 proc getResponse*(url): Future[string] {.async.} =
-    ## Local proc to send GET requests
+    ## Local proc to send GET requests.
     return await client.getContent(url)
 
 
 proc buildRequest*(api, request): string =
-    ## Builds an url string from request data, that can be sent to the API
+    ## Builds an url string from request data, that can be sent to the API.
+    ## 
+    ## Should not be called manually, used internally.
     var args: seq[string]
 
     # Amount of pictures:
@@ -93,6 +89,7 @@ proc buildRequest*(api, request): string =
 
 proc sendRequest*(api, request): JsonNode =
     ## Get raw json result from the API.
+    ## 
     ## Should not be called manually just to get images. Use `requestImageUrl()` and `requestImageUrls()` instead!
     ## 
     ## See **https://developers.thecatapi.com/** for information on how data is structured.
@@ -102,6 +99,7 @@ proc sendRequest*(api, request): JsonNode =
     except JsonParsingError:
         result = """{"message": "Could not parse response from api."}""".parseJson()
         errorLog("Could not parse response from api.")
+
 
 
 # -----------------------------------------------------------------------------
@@ -120,6 +118,7 @@ proc getImagesFromResponse(response: JsonNode): seq[string] =
             result.add(i["url"].str)
     except CatchableError:
         errorLog("Invalid response received: " & $response)
+
 
 
 # -----------------------------------------------------------------------------
