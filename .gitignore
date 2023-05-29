@@ -1,0 +1,5 @@
+# Test binaries:
+tests/test_url_generation
+
+# Quick testing stuff:
+test_request*

@@ -19,6 +19,7 @@ proc errorLog(msg: string) =
     stderr.writeLine("[nimcatapi] " & msg)
 
 
+
 # -----------------------------------------------------------------------------
 # API client creation:
 # -----------------------------------------------------------------------------
@@ -51,12 +52,12 @@ proc setFailedImageParseImage*(url) =
 # URL stuff:
 # -----------------------------------------------------------------------------
 
-proc getResponse(url): Future[string] {.async.} =
+proc getResponse*(url): Future[string] {.async.} =
     ## Local proc to send GET requests
     return await client.getContent(url)
 
 
-proc buildRequest(api, request): string =
+proc buildRequest*(api, request): string =
     ## Builds an url string from request data, that can be sent to the API
     var args: seq[string]
 
@@ -79,7 +80,7 @@ proc buildRequest(api, request): string =
     
     # Token:
     if api.token.isSome():
-        args.add(&"api_key={api.token}")
+        args.add(&"api_key={api.token.get()}")
 
     # Final construction:
     result = $api.kind
@@ -92,8 +93,10 @@ proc buildRequest(api, request): string =
 
 proc sendRequest*(api, request): JsonNode =
     ## Get raw json result from the API.
+    ## Should not be called manually just to get images. Use `requestImageUrl()` and `requestImageUrls()` instead!
+    ## 
     ## See **https://developers.thecatapi.com/** for information on how data is structured.
-    let response: string = await api.buildRequest(request).getResponse()
+    let response: string = waitFor api.buildRequest(request).getResponse()
     try:
         result = response.parseJson()
     except JsonParsingError:
@@ -106,8 +109,10 @@ proc sendRequest*(api, request): JsonNode =
 # -----------------------------------------------------------------------------
 
 proc getImagesFromResponse(response: JsonNode): seq[string] =
-    if response.hasKey("msg"):
-        errorLog(response["msg"].str)
+    ## Loops over response json and pick `"url"` field from objects.
+    if response.kind == JObject:
+        if response.hasKey("msg"):
+            errorLog(response["msg"].str)
 
     try:
         for i in response:
@@ -128,20 +133,26 @@ proc requestImageUrl*(api): string =
 
 
 proc requestImageUrls*(api, request): seq[string] =
+    ## Requests images with custom parameters in `Request` object.
+    ## 
+    ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
     let response: JsonNode = api.sendRequest(request)
     return response.getImagesFromResponse()
 
 proc requestImageUrls*(api; amount: int): seq[string] =
     ## Requests multiple images.
-    ## Without a token you can request 1-10 images, with a token you can request 1-100.
+    ## 
+    ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
     let response: JsonNode = api.sendRequest(Request(
         limit: some amount
     ))
     return response.getImagesFromResponse()
 
+proc requestImageUrls*(api; size: ImageSize = sizeNone, format: seq[ImageFormat], amount: int = 0): seq[string] =
+    ## Requests images with custom parameters.
+    ## 
+    ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
 
-
-proc requestDetailed*(api; size: ImageSize = sizeNone, format: seq[ImageFormat], amount: int = 0): seq[string] =
     var request: Request = Request()
     if size != sizeNone:
         request.size = some size

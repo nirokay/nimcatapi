@@ -4,8 +4,8 @@ type
     # API client:
 
     AnimalApiKind* = enum
-        TheCatApi = "https://api.thecatapi.com/v1/search/images"
-        TheDogApi = "https://api.thedogapi.com/v1/search/images"
+        TheCatApi = "https://api.thecatapi.com/v1/images/search"
+        TheDogApi = "https://api.thedogapi.com/v1/images/search"
 
     AnimalApi* = object
         kind*: AnimalApiKind
