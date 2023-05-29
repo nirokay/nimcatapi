@@ -2,7 +2,7 @@
 
 ## About
 
-**nimcatapi** is a library to easily get images from [thecatapi](https://thecatapi.com/) and/or [thedogapi](https://thedogapi.com/).
+**nimcatapi** is a library that lets you easily request images from [thecatapi](https://thecatapi.com/) and/or [thedogapi](https://thedogapi.com/). 
 
 ## Installation
 
