@@ -2,7 +2,7 @@
 
 version       = "1.0.0"
 author        = "nirokay"
-description   = "Easily get images from thecatapi.com and thedogapi.com!"
+description   = "nimcatapi is a library that lets you easily request images from thecatapi and/or thedogapi."
 license       = "GPL-3.0-only"
 srcDir        = "src"
 
