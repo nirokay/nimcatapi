@@ -138,16 +138,16 @@ proc requestImageUrls*(api, request): seq[string] =
     let response: JsonNode = api.sendRequest(request)
     return response.getImagesFromResponse()
 
-proc requestImageUrls*(api; amount: int): seq[string] =
+proc requestImageUrls*(api; amount: Positive): seq[string] =
     ## Requests multiple images.
     ## 
     ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
     let response: JsonNode = api.sendRequest(Request(
-        limit: some amount
+        limit: some int amount
     ))
     return response.getImagesFromResponse()
 
-proc requestImageUrls*(api; size: ImageSize = sizeNone, format: seq[ImageFormat], amount: int = 0): seq[string] =
+proc requestImageUrls*(api; size: ImageSize = sizeNone, formats: seq[ImageFormat], amount: Positive = 1): seq[string] =
     ## Requests images with custom parameters.
     ## 
     ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
@@ -155,10 +155,18 @@ proc requestImageUrls*(api; size: ImageSize = sizeNone, format: seq[ImageFormat]
     var request: Request = Request()
     if size != sizeNone:
         request.size = some size
-    if format.len() != 0:
-        request.mime_types = some format
+    if formats.len() != 0:
+        request.mime_types = some formats
     if amount > 0:
-        request.limit = some amount
+        request.limit = some int amount
 
     let response: JsonNode = api.sendRequest(request)
     return response.getImagesFromResponse()
+
+proc requestImageUrls*(api; size: ImageSize = sizeNone, format: ImageFormat, amount: Positive = 1): seq[string] =
+    ## Requests images with custom parameters.
+    ## 
+    ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
+    return api.requestImageUrls(size, @[format], amount)
+
+
