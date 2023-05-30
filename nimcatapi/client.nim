@@ -53,7 +53,7 @@ proc newDogApiClient*(token: string = ""): AnimalApi =
 # URL stuff:
 # -----------------------------------------------------------------------------
 
-proc getResponse*(url): Future[string] {.async.} =
+proc getResponse(url): Future[string] {.async.} =
     ## Local proc to send GET requests.
     return await client.getContent(url)
 
