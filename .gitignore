@@ -6,3 +6,6 @@ tests/test_url_generation
 
 # Quick testing stuff:
 test_request*
+
+# Docs (moved to github.io page):
+docs
