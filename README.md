@@ -41,3 +41,5 @@ let customImagesWithObj*: seq[string] = cats.requestImageUrls(Request(
     limit: some 5
 ))
 ```
+
+For detiled documentation, please visit [the nim generated docs page](https://nirokay.github.io/nim-docs/nimcatapi)!

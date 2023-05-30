@@ -1,3 +1,10 @@
+## Client documentation
+## ====================
+## 
+## This page covers all procs you can call in detail. For a basic introduction, see the main page.
+## 
+
+
 import std/[asyncdispatch, httpclient, json, strutils, strformat, options]
 import ./typedefs
 
