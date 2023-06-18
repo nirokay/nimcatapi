@@ -5,24 +5,13 @@
 ## 
 
 
-import std/[asyncdispatch, httpclient, json, strutils, strformat, options]
-import ./typedefs
+import std/[json, options]
+import ./typedefs, ./internal
 
 using
     api: AnimalApi
     url: string
     request: Request
-
-var client: AsyncHttpClient = newAsyncHttpClient()
-
-
-
-# -----------------------------------------------------------------------------
-# Error handling:
-# -----------------------------------------------------------------------------
-
-proc errorLog(msg: string) =
-    stderr.writeLine("[nimcatapi] " & msg)
 
 
 
@@ -40,91 +29,14 @@ proc getNewClient(T: AnimalApiKind, token: string): AnimalApi =
 
 proc newCatApiClient*(token: string = ""): AnimalApi =
     ## Creates a new AnimalApi with thecatapi.com url.
+    ## 
     ## Token is optional, as you can request from the API without it as well.
     getNewClient(TheCatApi, token)
 proc newDogApiClient*(token: string = ""): AnimalApi =
     ## Creates a new AnimalApi with thedogapi.com url.
+    ## 
     ## Token is optional, as you can request from the API without it as well.
     getNewClient(TheDogApi, token)
-
-
-
-# -----------------------------------------------------------------------------
-# URL stuff:
-# -----------------------------------------------------------------------------
-
-proc getResponse(url): Future[string] {.async.} =
-    ## Local proc to send GET requests.
-    return await client.getContent(url)
-
-
-proc buildRequest*(api, request): string =
-    ## Builds an url string from request data, that can be sent to the API.
-    ## 
-    ## Should not be called manually, used internally.
-    var args: seq[string]
-
-    # Amount of pictures:
-    if request.limit.isSome():
-        args.add(&"limit={request.limit.get()}")
-    
-    # Image size:
-    if request.size.isSome():
-        args.add(&"size={$request.size}")
-
-    # File types:
-    if request.mime_types.isSome():
-        var list: seq[string]
-        for frmt in request.mime_types.get():
-            list.add($frmt)
-        
-        let joinedList: string = list.join(",")
-        args.add(&"mime_types={joinedList}")
-    
-    # Token:
-    if api.token.isSome():
-        args.add(&"api_key={api.token.get()}")
-
-    # Final construction:
-    result = $api.kind
-    if args.len() != 0:
-        result.add("?")
-        result.add(args.join("&"))
-
-    return result
-
-
-proc sendRequest*(api, request): JsonNode =
-    ## Get raw json result from the API.
-    ## 
-    ## Should not be called manually just to get images. Use `requestImageUrl()` and `requestImageUrls()` instead!
-    ## 
-    ## See **https://developers.thecatapi.com/** for information on how data is structured.
-    let response: string = waitFor api.buildRequest(request).getResponse()
-    try:
-        result = response.parseJson()
-    except JsonParsingError:
-        result = """{"message": "Could not parse response from api."}""".parseJson()
-        errorLog("Could not parse response from api.")
-
-
-
-# -----------------------------------------------------------------------------
-# Parsing procs:
-# -----------------------------------------------------------------------------
-
-proc getImagesFromResponse(response: JsonNode): seq[string] =
-    ## Loops over response json and pick `"url"` field from objects.
-    if response.kind == JObject:
-        if response.hasKey("msg"):
-            errorLog(response["msg"].str)
-
-    try:
-        for i in response:
-            if not i.hasKey("url"): continue
-            result.add(i["url"].str)
-    except CatchableError:
-        errorLog("Invalid response received: " & $response)
 
 
 

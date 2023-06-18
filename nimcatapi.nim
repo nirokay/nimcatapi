@@ -45,5 +45,7 @@
 ## Without a token, you may only request 1 *or* 10 images!
 ## 
 
+{.define: ssl.}
+
 import nimcatapi/[typedefs, client]
 export typedefs, client
