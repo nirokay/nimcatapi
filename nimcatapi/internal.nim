@@ -143,8 +143,7 @@ proc getBreedsFromApiBreeds*[A, B](api: AnimalApi, response: JsonNode): seq[B] =
     try:
         apiBreeds = response.to(seq[A])
     except CatchableError as e:
-        #errorLog("Got invalid JsonNode from api - tried to convert to ApiBreed objs:\n" & $response)
-        echo e.msg
+        errorLog(&"Got invalid JsonNode from api - tried to convert to ApiBreed objs ({e.msg}):\n" & $response)
         return @[]
 
     # Convert ApiBreeds to actual Breed objects:

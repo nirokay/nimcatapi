@@ -12,14 +12,20 @@ To use it in your projects, include `requires "nimcatapi"` in your `.nimble` fil
 
 ## Usage
 
+Most of the functionality works without a token. If you however would like to request a specific amount of images (except just one or ten), you will need to request an API token: [thecatapi](https://thecatapi.com/#pricing) / [thedogapi](https://thedogapi.com/#pricing)
+
+### Requesting images
+
+You can easily request one or multiple random images.
+
 ```nim
 import std/options
 import nimcatapi
 
-# Both APIs work the same way and share a single object:
+# Both APIs work the same way:
 let
-    cats*: AnimalApi = newCatApiClient(token = "meow")
-    dogs*: AnimalApi = newDogApiClient() # works without a token as well!
+    cats*: TheCatApi = newCatApiClient(token = "meow")
+    dogs*: TheDogApi = newDogApiClient() # works without a token as well!
 
 # A single image:
 let singleImage*: string = cats.requestImageUrl()
@@ -41,5 +47,22 @@ let customImagesWithObj*: seq[string] = cats.requestImageUrls(Request(
     limit: some 5
 ))
 ```
+
+### Requesting breeds
+
+Requesting breeds functions the same across both APIs, however you will get differently structured responses.
+
+```nim
+import nimcatapi
+
+let
+    dogs: TheDogApi = newDogApiClient()
+    breeds: seq[DogBreed] = dogs.requestBreeds()
+echo "Got " & breeds.len() & " dog breeds!"
+```
+
+For proper documentation about `DogBreed` and `CatBreed` objects, please visit [the docs](https://nirokay.github.io/nim-docs/nimcatapi/nimcatapi/typedefs.html#Breed)!
+
+## Documentation
 
 For detiled documentation, please visit [the nim generated docs page](https://nirokay.github.io/nim-docs/nimcatapi/nimcatapi)!
