@@ -10,4 +10,4 @@ skipFiles     = @["run_tests.sh", "update_docs.sh"]
 
 # Dependencies
 
-requires "nim >= 1.0.0"
+requires "nim >= 1.1.0"

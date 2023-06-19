@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NIM_VERSIONS=( "1.0.0" "1.6.0" "1.6.10" "1.6.12" "#head" "stable" )
+NIM_VERSIONS=( "1.1.0" "1.6.0" "1.6.10" "1.6.12" "#head" "stable" )
 TEST_RESULTS=()
 
 COL_RED='\033[0;31m'
