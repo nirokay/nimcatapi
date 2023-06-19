@@ -1,5 +1,6 @@
 # Test binaries:
 tests/test_url_generation
+tests/test_breeds
 
 # Project management:
 *TODO*

@@ -7,12 +7,18 @@
 import std/[asyncdispatch, httpclient, json, strutils, strformat, options]
 import ./typedefs
 
-type Re = typedefs.Response
+type
+    RequestType* = enum
+        imageSearch = "/images/search"
+        breedSearch = "/breeds"
+
+    Re = typedefs.Response
 
 using
     api: AnimalApi
     url: string
     request: Request
+    requestType: RequestType
 
 var client: AsyncHttpClient = newAsyncHttpClient()
 
@@ -36,10 +42,17 @@ proc getResponse(url): Future[string] {.async.} =
     return await client.getContent(url)
 
 
-proc buildRequest*(api, request): string =
+proc buildRequest*(api, requestType, request): string =
     ## Builds an url string from request data, that can be sent to the API.
     ## 
     ## Should not be called manually, used internally.
+    
+    # Handle breed query: -----------------------------------------------------
+    if requestType == breedSearch:
+        return api.url & $requestType
+
+
+    # Handle image query: -----------------------------------------------------
     var args: seq[string]
 
     # Amount of pictures:
@@ -68,7 +81,7 @@ proc buildRequest*(api, request): string =
         args.add(&"api_key={api.token.get()}")
 
     # Final construction:
-    result = $api.kind
+    result = api.url & $requestType
     if args.len() != 0:
         result.add("?")
         result.add(args.join("&"))
@@ -76,13 +89,13 @@ proc buildRequest*(api, request): string =
     return result
 
 
-proc sendRequest*(api, request): JsonNode =
+proc sendRequest*(api, requestType; request = Request()): JsonNode =
     ## Get raw json result from the API.
     ## 
     ## Should not be called manually just to get images. Use `requestImageUrl()` and `requestImageUrls()` instead!
     ## 
     ## See **https://developers.thecatapi.com/** for information on how data is structured.
-    let response: string = waitFor api.buildRequest(request).getResponse()
+    let response: string = waitFor api.buildRequest(requestType, request).getResponse()
     try:
         result = response.parseJson()
     except JsonParsingError:
@@ -121,7 +134,28 @@ proc getImagesFromResponse*(response: JsonNode): seq[string] =
         let r: seq[Re] = response.to(seq[Re])
         return r.getImagesFromResponse()
     except CatchableError:
-        errorLog("Got invalid JsonNode from api - tried to convert to Response obj:\n" & $response)
+        errorLog("Got invalid JsonNode from api - tried to convert to Response objs:\n" & $response)
         return @[]
 
+proc getBreedsFromApiBreeds*[A, B](api: AnimalApi, response: JsonNode): seq[B] =
+    # Convert to ApiBreeds:
+    var apiBreeds: seq[A]
+    try:
+        apiBreeds = response.to(seq[A])
+    except CatchableError as e:
+        #errorLog("Got invalid JsonNode from api - tried to convert to ApiBreed objs:\n" & $response)
+        echo e.msg
+        return @[]
+
+    # Convert ApiBreeds to actual Breed objects:
+    for apiBreed in apiBreeds:
+        try:
+            let breed: B = apiBreed.convert()
+            result.add(breed)
+        except CatchableError:
+            errorLog("Error while converting from ApiBreed to Breed object! Skipping breed:\n" & $apiBreed)
+            continue
+
+    # Return all breeds:
+    return result
 

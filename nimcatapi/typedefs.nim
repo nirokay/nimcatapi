@@ -3,14 +3,16 @@ import std/[strutils, options]
 type
     # API client:
 
-    AnimalApiKind* = enum
-        TheCatApi = "https://api.thecatapi.com/v1/images/search"
-        TheDogApi = "https://api.thedogapi.com/v1/images/search"
+    AnimalUrls* = enum
+        TheCatApiUrl = "https://api.thecatapi.com/v1"
+        TheDogApiUrl = "https://api.thedogapi.com/v1"
 
-    AnimalApi* = object
-        kind*: AnimalApiKind
+    AnimalApi* = object of RootObj
+        url*: string
         token*: Option[string]
 
+    TheCatApi* = object of AnimalApi
+    TheDogApi* = object of AnimalApi
 
     # Request stuff:
 
@@ -37,21 +39,27 @@ type
     ReferenceImage* = tuple
         id, url: string
         width, height: Option[int]
+    
+    Category* = tuple
+        id: int
+        name: string
 
     ImperialMetricValues* = tuple
         imperial, metric: string
 
     ApiBreed* = object of RootObj
-        id*, name*, description*, life_span*: string
+        name*, life_span*: string
+        description*: Option[string]
         weight*: Option[ImperialMetricValues]
-        temperament*: string
         ## General Information
 
-        origin*: string
+        origin*: Option[string]
         country_code*: Option[string]
         ## Origin country (countries for thedogapi)
 
     ApiBreedCat* = object of ApiBreed
+        id*, temperament*: string
+
         cfa_url*, vetstreet_url*, vcahospitals_url*, wikipedia_url*: Option[string]
 
         country_codes: string
@@ -68,22 +76,27 @@ type
 
         indoor*, lap*, bidability*: Option[int]
         ## My best guess is, these are also booleans (they are never used by the api)
-    
+
     ApiBreedDog* = object of ApiBreed
+        id: int
+        temperament: Option[string]
+
         height*: Option[ImperialMetricValues]
-        bred_for*, breed_group*: string
+        bred_for*, breed_group*: Option[string]
 
         reference_image_id*: Option[string]
         image*: Option[ReferenceImage]
         ## Reference Image
 
     Breed* = object of RootObj
-        id*, name*, lifeSpan*: string
-        description*: Option[string]
-        temperament*: Option[seq[string]]
+        name*, lifeSpan*: string
+        temperament*: seq[string]
         weight*: Option[ImperialMetricValues]
 
     CatBreed* = object of Breed
+        id: string
+        description*: string
+
         informationUrls*: Option[seq[string]]
         ## Links to websites with information about breed
 
@@ -102,8 +115,11 @@ type
             indoor, lap, bidability: Option[bool]
         ]
         ## Breed attributes
-    
+
     DogBreed* = object of Breed
+        id: int # Fuck you, thedogapi for making this ints, not strings
+        description*: Option[string]
+
         height*: Option[ImperialMetricValues]
         referenceImage*: Option[ReferenceImage]
         group*, purpose*: Option[string]
@@ -114,6 +130,7 @@ type
         id*, url*: string
         width*, height*: Option[int]
         breeds*: Option[seq[Breed]]
+        categories*: Option[seq[Category]]
 
 
 
@@ -129,16 +146,14 @@ proc convert*(apiBreed: ApiBreedCat): CatBreed =
         weight: a.weight,
         id: a.id,
         name: a.name,
-        description: some a.description,
+        description: a.description.get(), # thecatapi has consistent descriptions, while thedogapi has not. This is for that!
         lifeSpan: a.life_span,
-        originCountry: (name: a.origin, code: a.country_code.get())
+        originCountry: (name: a.origin.get(), code: a.country_code.get())
     )
 
     # Add temprament as sequence:
-    var temperament: seq[string]
     for temp in a.temperament.split(','):
-        temperament.add(temp.strip())
-    if temperament.len() != 0: result.temperament = some temperament
+        result.temperament.add(temp.strip())
 
     # Add all available urls:
     var urls: seq[string]
@@ -190,8 +205,40 @@ proc convert*(apiBreed: ApiBreedCat): CatBreed =
         bidability: a.bidability.toBool()
     )
 
-proc convert*(apiBreed: seq[ApiBreedCat]): seq[CatBreed] =
-    ## Converts breed information from the api into easy to use object with some QoL conversions
+proc convert*(apiBreeds: seq[ApiBreedCat]): seq[CatBreed] =
+    ## Converts breed information from the api into easy-to-use object with some QoL conversions
     ## like for example `range[0..1]` converted to `bool`!
-    for breed in apiBreed:
+    for breed in apiBreeds:
+        result.add(breed.convert())
+
+
+proc convert*(apiBreed: ApiBreedDog): DogBreed =
+    result = DogBreed(
+        id: apiBreed.id,
+        name: apiBreed.name,
+        description: apiBreed.description,
+        lifeSpan: apiBreed.lifeSpan,
+        weight: apiBreed.weight,
+        height: apiBreed.height,
+
+        group: apiBreed.breed_group,
+        purpose: apiBreed.bred_for,
+
+        referenceImage: apiBreed.image
+    )
+
+    # Temperament as sequence:
+    if apiBreed.temperament.isSome():
+        for t in apiBreed.temperament.get().split(","):
+            result.temperament.add(t.strip())
+    
+    # Origin countries:
+    if apiBreed.origin.isSome():
+        let countries: string = apiBreed.origin.get()
+        for c in countries.split(" "):
+            result.originCountries.add(c.strip())
+
+proc convert*(apiBreeds: seq[ApiBreedDog]): seq[DogBreed] =
+    ## Converts breed information from the api into easy-to-use object.
+    for breed in apiBreeds:
         result.add(breed.convert())

@@ -19,24 +19,28 @@ using
 # API client creation:
 # -----------------------------------------------------------------------------
 
-proc getNewClient(T: AnimalApiKind, token: string): AnimalApi =
-    result = AnimalApi(
-        kind: T,
-        token: none string
-    )
-    if token != "": result.token = some token
-    return result
+proc getToken(token: string): Option[string] =
+    if token == "":
+        return none string
+    else:
+        return some token
 
-proc newCatApiClient*(token: string = ""): AnimalApi =
+proc newCatApiClient*(token: string = ""): TheCatApi =
     ## Creates a new AnimalApi with thecatapi.com url.
     ## 
     ## Token is optional, as you can request from the API without it as well.
-    getNewClient(TheCatApi, token)
-proc newDogApiClient*(token: string = ""): AnimalApi =
+    return TheCatApi(
+        url: $TheCatApiUrl,
+        token: token.getToken()
+    )
+proc newDogApiClient*(token: string = ""): TheDogApi =
     ## Creates a new AnimalApi with thedogapi.com url.
     ## 
     ## Token is optional, as you can request from the API without it as well.
-    getNewClient(TheDogApi, token)
+    return TheDogApi(
+        url: $TheDogApiUrl,
+        token: token.getToken()
+    )
 
 
 
@@ -44,9 +48,11 @@ proc newDogApiClient*(token: string = ""): AnimalApi =
 # Public request procs:
 # -----------------------------------------------------------------------------
 
+# Images:
+
 proc requestImageUrl*(api): string =
     ## Requests a single image from the API.
-    let response: JsonNode = api.sendRequest(Request())
+    let response: JsonNode = api.sendRequest(imageSearch, Request())
     return response.getImagesFromResponse()[0]
 
 
@@ -54,14 +60,14 @@ proc requestImageUrls*(api, request): seq[string] =
     ## Requests images with custom parameters in `Request` object.
     ## 
     ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
-    let response: JsonNode = api.sendRequest(request)
+    let response: JsonNode = api.sendRequest(imageSearch, request)
     return response.getImagesFromResponse()
 
 proc requestImageUrls*(api; amount: Positive): seq[string] =
     ## Requests multiple images.
     ## 
     ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
-    let response: JsonNode = api.sendRequest(Request(
+    let response: JsonNode = api.sendRequest(imageSearch, Request(
         limit: some int amount
     ))
     return response.getImagesFromResponse()
@@ -79,7 +85,7 @@ proc requestImageUrls*(api; size: ImageSize = sizeNone, formats: seq[ImageFormat
     if amount > 0:
         request.limit = some int amount
 
-    let response: JsonNode = api.sendRequest(request)
+    let response: JsonNode = api.sendRequest(imageSearch, request)
     return response.getImagesFromResponse()
 
 proc requestImageUrls*(api; size: ImageSize = sizeNone, format: ImageFormat, amount: Positive = 1): seq[string] =
@@ -88,4 +94,16 @@ proc requestImageUrls*(api; size: ImageSize = sizeNone, format: ImageFormat, amo
     ## Without a token you can request 1 or 10 images only, with a token you can request 1-100.
     return api.requestImageUrls(size, @[format], amount)
 
+
+# Breeds:
+
+proc requestBreeds*(api: TheCatApi): seq[CatBreed] =
+    ## Requests sequence of all cat breeds from the api.
+    let response: JsonNode = api.sendRequest(breedSearch)
+    return getBreedsFromApiBreeds[ApiBreedCat, CatBreed](api, response)
+
+proc requestBreeds*(api: TheDogApi): seq[DogBreed] =
+    ## Requests sequence of all dog breeds from the api.
+    let response: JsonNode = api.sendRequest(breedSearch)
+    return getBreedsFromApiBreeds[ApiBreedDog, DogBreed](api, response)
 
