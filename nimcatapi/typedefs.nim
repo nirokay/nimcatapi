@@ -94,8 +94,7 @@ type
         weight*: Option[ImperialMetricValues]
 
     CatBreed* = object of Breed
-        id: string
-        description*: string
+        id*, description*: string
 
         informationUrls*: Option[seq[string]]
         ## Links to websites with information about breed
@@ -117,7 +116,7 @@ type
         ## Breed attributes
 
     DogBreed* = object of Breed
-        id: int # Fuck you, thedogapi for making this ints, not strings
+        id*: int # Fuck you, thedogapi for making this ints, not strings
         description*: Option[string]
 
         height*: Option[ImperialMetricValues]
